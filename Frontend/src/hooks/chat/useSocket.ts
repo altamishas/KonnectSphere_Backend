@@ -42,8 +42,7 @@ export const useSocket = (): UseSocketReturn => {
     }
 
     // Backend is running on port 8080, not 3000
-    const serverUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const serverUrl = process.env.NEXT_PUBLIC_API_URL;
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
 

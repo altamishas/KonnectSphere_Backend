@@ -158,8 +158,8 @@ const loginUser = (req: Request, res: Response, next: NextFunction) => {
           // Set only the auth token cookie
           res.cookie("token", token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            secure: process.env.NODE_ENV === "deployment",
+            sameSite: "none",
             maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
           });
 
@@ -991,8 +991,8 @@ const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     // Set only the auth token cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "deployment",
+      sameSite: "none",
       maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
     });
 

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Configure axios instance for preferred pitches API
 const api = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
   withCredentials: true,
 });
 

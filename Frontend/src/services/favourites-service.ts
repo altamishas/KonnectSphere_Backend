@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Configure axios instance for favourites API
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api",
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
   withCredentials: true,
 });
 
