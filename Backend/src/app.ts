@@ -50,9 +50,10 @@ app.use("/api/webhooks", webhookRouter);
 
 app.use(express.json());
 app.use(cookieParser());
+console.log("Middleware setup complete", config.FRONTEND_URL);
 
 // CORS configuration for development and production
-const corsOrigins = [config.FRONTEND_URL as string];
+const corsOrigins = [config.FRONTEND_URL as string, /\.vercel\.app$/];
 
 // Add ngrok domains for development
 if (process.env.NODE_ENV === "development") {
@@ -69,8 +70,10 @@ app.use(
 
       // Check if origin matches our allowed patterns
       const isAllowed = corsOrigins.some((allowedOrigin) => {
+        if (allowedOrigin instanceof RegExp) {
+          return allowedOrigin.test(origin);
+        }
         if (allowedOrigin.includes("*")) {
-          // Handle wildcard patterns like *.ngrok.io
           const pattern = allowedOrigin.replace("*", ".*");
           return new RegExp(pattern).test(origin);
         }
