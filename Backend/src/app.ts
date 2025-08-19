@@ -51,21 +51,38 @@ app.use(cookieParser());
 
 console.log("Middleware setup complete", config.FRONTEND_URL);
 
-// Enhanced CORS configuration for development and production
+// Enhanced CORS configuration with multiple allowed origins
 const corsOrigins: (string | RegExp)[] = [];
 
-// Add frontend URL from config
+// Add frontend URLs from environment variables
+if (config.FRONTEND_URL) {
+  // Remove trailing slash if present for consistency
+  const frontendUrl = config.FRONTEND_URL.replace(/\/$/, '');
+  corsOrigins.push(frontendUrl);
+  console.log("✅ Added FRONTEND_URL:", frontendUrl);
+}
+
+if (config.CLIENT_URL) {
+  // Remove trailing slash if present for consistency
+  const clientUrl = config.CLIENT_URL.replace(/\/$/, '');
+  corsOrigins.push(clientUrl);
+  console.log("✅ Added CLIENT_URL:", clientUrl);
+}
+
+// Add both variations (with and without trailing slash) for safety
 if (config.FRONTEND_URL) {
   corsOrigins.push(config.FRONTEND_URL);
 }
+if (config.CLIENT_URL) {
+  corsOrigins.push(config.CLIENT_URL);
+}
 
-// Add Vercel preview deployments
+// Add Vercel preview deployments (for branch previews)
 corsOrigins.push(/\.vercel\.app$/);
 
-// Development origins
+// Additional development origins (only in development)
 if (process.env.NODE_ENV === "development") {
   corsOrigins.push(/https:\/\/.*\.ngrok\.io$/);
-  corsOrigins.push("http://localhost:3000");
   corsOrigins.push("http://127.0.0.1:3000");
   corsOrigins.push("https://localhost:3000");
   corsOrigins.push("https://127.0.0.1:3000");
@@ -168,6 +185,9 @@ app.get("/", (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     frontendUrl: config.FRONTEND_URL,
+    allowedOrigins: corsOrigins.map((origin) =>
+      origin instanceof RegExp ? origin.toString() : origin
+    ),
   });
 });
 
