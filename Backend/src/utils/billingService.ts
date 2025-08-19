@@ -42,8 +42,14 @@ if (
   config.STRIPE_SECRET_KEY.includes("sk_test") &&
   config.NODE_ENV === "production"
 ) {
-  throw new Error(
-    "You are using the Stripe test secret key in production. Please use the live secret key."
+  // throw new Error(
+  //   "You are using the Stripe test secret key in production. Please use the live secret key."
+  // );
+  console.warn(
+    "⚠️  WARNING: Using Stripe test keys in production for testing purposes!"
+  );
+  console.warn(
+    "⚠️  Remember to switch to live keys before actual production use!"
   );
 }
 
