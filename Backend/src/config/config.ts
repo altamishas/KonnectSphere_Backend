@@ -14,6 +14,7 @@ const _config = {
   JWT_EXPIRE: process.env.JWT_EXPIRE,
   JWT_COOKIE_EXPIRE: process.env.JWT_COOKIE_EXPIRE,
   FRONTEND_URL: process.env.FRONTEND_URL,
+  CLIENT_URL: process.env.CLIENT_URL,
   EMAIL_HOST: process.env.EMAIL_HOST || "smtp.gmail.com",
   EMAIL_PORT: parseInt(process.env.EMAIL_PORT || "587"),
   EMAIL_SECURE: process.env.EMAIL_SECURE || "false",

@@ -6,7 +6,7 @@ import {
   findClosestRoute,
 } from "@/lib/validRoutes";
 
-export function middleware(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const { pathname, search } = request.nextUrl;
   const fullPath = pathname + search;
