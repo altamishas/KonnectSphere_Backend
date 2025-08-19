@@ -11,6 +11,22 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const fullPath = pathname + search;
 
+  // Debug logging for production troubleshooting
+  const isProduction = process.env.NEXT_PUBLIC_NODE_ENV === "production";
+
+  if (isProduction) {
+    console.log("Middleware Debug:", {
+      pathname,
+      search,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      cookies: request.cookies
+        .getAll()
+        .map((c) => ({ name: c.name, hasValue: !!c.value })),
+      userAgent: request.headers.get("user-agent")?.slice(0, 50),
+    });
+  }
+
   // Skip middleware for static files and API routes
   if (
     pathname.startsWith("/_next/") ||
@@ -81,11 +97,29 @@ export function middleware(request: NextRequest) {
       search.includes("tab=my-investors") ||
       search.includes("tab=investor-search"));
 
+  if (isProduction) {
+    console.log("Protection Check:", {
+      isProtectedRoute,
+      isDashboardTabRoute,
+      hasToken: !!token,
+      pathname,
+    });
+  }
+
   // Redirect to login if accessing protected routes without token
   if ((isProtectedRoute || isDashboardTabRoute) && !token) {
     const loginUrl = new URL("/login", request.url);
     // Store the attempted URL to redirect back after login
     loginUrl.searchParams.set("redirect", fullPath);
+
+    if (isProduction) {
+      console.log("Redirecting to login:", {
+        reason: "No token for protected route",
+        from: fullPath,
+        to: loginUrl.toString(),
+      });
+    }
+
     return NextResponse.redirect(loginUrl);
   }
 

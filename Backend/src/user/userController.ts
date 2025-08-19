@@ -159,7 +159,10 @@ const loginUser = (req: Request, res: Response, next: NextFunction) => {
           res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "deployment",
-            sameSite: "none",
+            sameSite:
+              process.env.NODE_ENV === "deployment"
+                ? ("none" as const)
+                : ("lax" as const),
             maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
           });
 
@@ -869,8 +872,11 @@ const userDeletionHandler = async (
       // Clear the authentication cookie
       res.clearCookie("token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: process.env.NODE_ENV === "deployment",
+        sameSite:
+          process.env.NODE_ENV === "deployment"
+            ? ("none" as const)
+            : ("lax" as const),
       });
 
       res.status(200).json({ message: "User deleted successfully" });
@@ -922,8 +928,11 @@ const resubscribeUser = (req: Request, res: Response, next: NextFunction) => {
 const logoutUser = (req: Request, res: Response) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "deployment",
+    sameSite:
+      process.env.NODE_ENV === "deployment"
+        ? ("none" as const)
+        : ("lax" as const),
   });
   res.status(200).json({ message: "Logged out successfully" });
 };
@@ -992,7 +1001,10 @@ const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "deployment",
-      sameSite: "none",
+      sameSite:
+        process.env.NODE_ENV === "deployment"
+          ? ("none" as const)
+          : ("lax" as const),
       maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
     });
 

@@ -8,6 +8,7 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true,
+  timeout: 30000, // 30 seconds timeout
 });
 
 // Request interceptor to add token if available
@@ -18,7 +19,7 @@ axiosInstance.interceptors.request.use(
     config.withCredentials = true;
 
     // Optional: Add Authorization header if token exists in localStorage
-    // (This is mainly for development/testing, production uses cookies)
+    // (This serves as a fallback if cookies fail)
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("token");
       if (token && !config.headers.Authorization) {
@@ -32,6 +33,7 @@ axiosInstance.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
 // Enhanced error handling utility
 const getErrorMessage = (error: unknown): string => {
   // Type guard for axios errors
@@ -64,17 +66,13 @@ const getErrorMessage = (error: unknown): string => {
     if (typeof response.data === "string") {
       return response.data;
     }
-
     const data = response.data as Record<string, unknown>;
-
     if (data.message && typeof data.message === "string") {
       return data.message;
     }
-
     if (data.error && typeof data.error === "string") {
       return data.error;
     }
-
     // Handle validation errors
     if (data.errors && Array.isArray(data.errors)) {
       const firstError = data.errors[0] as Record<string, unknown>;
@@ -110,7 +108,13 @@ const getErrorMessage = (error: unknown): string => {
 };
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Store token in localStorage when received (as fallback)
+    if (response.data?.token && typeof window !== "undefined") {
+      localStorage.setItem("token", response.data.token);
+    }
+    return response;
+  },
   async (error) => {
     // Log connection errors for debugging
     if (
@@ -121,10 +125,20 @@ axiosInstance.interceptors.response.use(
       console.error("Trying to connect to:", API_URL);
     }
 
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401) {
+      // Clear token from localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        // Optionally redirect to login
+        // window.location.href = "/login";
+      }
+    }
+
     // Enhance error with user-friendly message
     error.userMessage = getErrorMessage(error);
-
     return Promise.reject(error);
   }
 );
+
 export default axiosInstance;
