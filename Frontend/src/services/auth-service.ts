@@ -24,7 +24,8 @@ export const authService = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
     const response = await axios.post<AuthResponse>(
       "/users/login",
-      credentials
+      credentials,
+      { withCredentials: true }
     );
 
     // Ensure any previous user data is cleared

@@ -157,10 +157,9 @@ const loginUser = (req: Request, res: Response, next: NextFunction) => {
 
           // Set only the auth token cookie
           res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "deployment",
+            secure: process.env.NODE_ENV === "production",
             sameSite:
-              process.env.NODE_ENV === "deployment"
+              process.env.NODE_ENV === "production"
                 ? ("none" as const)
                 : ("lax" as const),
             maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
@@ -871,10 +870,9 @@ const userDeletionHandler = async (
 
       // Clear the authentication cookie
       res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "deployment",
+        secure: process.env.NODE_ENV === "production",
         sameSite:
-          process.env.NODE_ENV === "deployment"
+          process.env.NODE_ENV === "production"
             ? ("none" as const)
             : ("lax" as const),
       });
@@ -927,10 +925,9 @@ const resubscribeUser = (req: Request, res: Response, next: NextFunction) => {
 
 const logoutUser = (req: Request, res: Response) => {
   res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "deployment",
+    secure: process.env.NODE_ENV === "production",
     sameSite:
-      process.env.NODE_ENV === "deployment"
+      process.env.NODE_ENV === "production"
         ? ("none" as const)
         : ("lax" as const),
   });
@@ -999,10 +996,9 @@ const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
 
     // Set only the auth token cookie
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "deployment",
+      secure: process.env.NODE_ENV === "production",
       sameSite:
-        process.env.NODE_ENV === "deployment"
+        process.env.NODE_ENV === "production"
           ? ("none" as const)
           : ("lax" as const),
       maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days

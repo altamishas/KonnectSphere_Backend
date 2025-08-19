@@ -8,6 +8,7 @@ import {
 
 export default function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
+  console.log(token, "token ");
   const { pathname, search } = request.nextUrl;
   const fullPath = pathname + search;
 

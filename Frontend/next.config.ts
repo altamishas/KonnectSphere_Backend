@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/users/:path*",
+        destination:
+          "https://konnectspherebackend-production.up.railway.app/users/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
