@@ -42,14 +42,27 @@ export const initializeSocket = (server: HTTPServer) => {
   io = new SocketIOServer(server, {
     cors: {
       origin: [
-        "http://localhost:3000", // Frontend running on port 3000
+        "http://localhost:3000",
         "http://127.0.0.1:3000",
         config.FRONTEND_URL as string,
+        "https://konect-sphere.vercel.app",
+        "https://konnectsphere.vercel.app",
+        "https://*.vercel.app",
       ],
       methods: ["GET", "POST"],
       credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
     },
     transports: ["websocket", "polling"],
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    cookie: {
+      name: "io",
+      httpOnly: true,
+      path: "/",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
   });
 
   // Authentication middleware for Socket.IO
