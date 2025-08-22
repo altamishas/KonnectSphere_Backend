@@ -238,8 +238,9 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   message: string;
-  accessToken: string;
-  user: User;
+  accessToken?: string; // For compatibility
+  token?: string; // Backend actually sends this
+  user?: User;
   userId?: string;
 }
 export interface AuthError {
