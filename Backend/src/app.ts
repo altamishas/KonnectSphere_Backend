@@ -51,6 +51,20 @@ app.use("/api/webhooks", webhookRouter);
 app.use(express.json());
 app.use(cookieParser());
 
+// Fix 304 caching issues in production
+app.use((req, res, next) => {
+  // Disable caching for API routes in production
+  if (req.path.startsWith("/api/")) {
+    res.set({
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+      ETag: false,
+    });
+  }
+  next();
+});
+
 // CORS configuration for development and production
 const corsOrigins = [config.FRONTEND_URL as string];
 
