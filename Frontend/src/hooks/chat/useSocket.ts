@@ -43,7 +43,7 @@ export const useSocket = (): UseSocketReturn => {
 
     // Connect to the backend server (Railway in production, localhost in dev)
     const serverUrl =
-      process.env.NEXT_PUBLIC_BACKEND_URL;
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
 
