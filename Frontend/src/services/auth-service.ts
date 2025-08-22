@@ -24,9 +24,24 @@ export const authService = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
     const response = await axios.post<AuthResponse>(
       "/users/login",
-      credentials,
-      { withCredentials: true }
+      credentials
     );
+
+    // Store token in localStorage as fallback for cross-domain issues
+    const token = response.data.accessToken || response.data.token;
+    if (token && typeof window !== "undefined") {
+      localStorage.setItem("token", token);
+      localStorage.setItem("auth_status", "authenticated");
+
+      // Set a readable cookie as fallback for middleware
+      document.cookie = `auth_status=authenticated; path=/; max-age=${
+        3 * 24 * 60 * 60
+      }; ${
+        window.location.protocol === "https:"
+          ? "secure; samesite=none"
+          : "samesite=lax"
+      }`;
+    }
 
     // Ensure any previous user data is cleared
     const queryClient = getQueryClient();
@@ -43,17 +58,26 @@ export const authService = {
   },
 
   logout: async () => {
-    // Clear all query cache before logging out
-    const queryClient = getQueryClient();
-    queryClient.clear();
+    try {
+      // Call backend logout to clear HTTP-only cookies
+      await axios.post(
+        "/users/logout",
+        {},
+        {
+          withCredentials: true, // Ensure credentials are sent
+        }
+      );
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Continue with local cleanup even if backend call fails
+    } finally {
+      // Always clear local auth data
+      authService.clearAuthData();
 
-    await axios.post(
-      "/users/logout",
-      {},
-      {
-        withCredentials: true, // Ensure credentials are sent
-      }
-    );
+      // Clear all query cache after logging out
+      const queryClient = getQueryClient();
+      queryClient.clear();
+    }
   },
 
   changePassword: async (data: {
@@ -167,8 +191,23 @@ export const authService = {
   verifyEmail: async (
     userId: string,
     otp: string
-  ): Promise<{ message: string; user: User }> => {
+  ): Promise<{ message: string; user: User; token?: string }> => {
     const response = await axios.post("/users/verify-email", { userId, otp });
+
+    // Store token after successful verification
+    if (response.data.token && typeof window !== "undefined") {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("auth_status", "authenticated");
+
+      document.cookie = `auth_status=authenticated; path=/; max-age=${
+        3 * 24 * 60 * 60
+      }; ${
+        window.location.protocol === "https:"
+          ? "secure; samesite=none"
+          : "samesite=lax"
+      }`;
+    }
+
     return response.data;
   },
 
@@ -178,5 +217,113 @@ export const authService = {
     const response = await axios.post("/users/resend-verification", { userId });
 
     return response.data;
+  },
+
+  // Enhanced authentication helper methods
+  isAuthenticated: (): boolean => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    // Check localStorage token
+    const localToken = localStorage.getItem("token");
+    const localAuthStatus = localStorage.getItem("auth_status");
+
+    // Check readable cookie
+    const cookieAuthStatus = authService.getCookie("auth_status");
+
+    // User is authenticated if any method indicates authentication
+    return !!(
+      localToken ||
+      localAuthStatus === "authenticated" ||
+      cookieAuthStatus === "authenticated"
+    );
+  },
+
+  getToken: (): string | null => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    // Try localStorage first (most reliable for cross-domain)
+    const localToken = localStorage.getItem("token");
+    if (localToken) {
+      return localToken;
+    }
+
+    // If no localStorage token, we rely on HTTP-only cookies
+    // which are automatically sent with requests
+    return null;
+  },
+
+  clearAuthData: (): void => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    // Clear localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("auth_status");
+
+    // Clear readable cookies
+    document.cookie =
+      "auth_status=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+    // Clear legacy auth data
+    localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("authToken");
+    localStorage.removeItem("auth");
+    sessionStorage.removeItem("auth");
+
+    // Note: HTTP-only cookies will be cleared by the backend
+  },
+
+  getCookie: (name: string): string | null => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop()?.split(";").shift() || null;
+    }
+    return null;
+  },
+
+  refreshAuthStatus: async (): Promise<boolean> => {
+    try {
+      await authService.getCurrentUser();
+      return true;
+    } catch (error) {
+      console.error("Auth refresh error:", error);
+      authService.clearAuthData();
+      return false;
+    }
+  },
+
+  initializeAuth: (): void => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    // Check if we have tokens but no auth status
+    const token = localStorage.getItem("token");
+    const authStatus = localStorage.getItem("auth_status");
+
+    if (token && !authStatus) {
+      localStorage.setItem("auth_status", "authenticated");
+
+      document.cookie = `auth_status=authenticated; path=/; max-age=${
+        3 * 24 * 60 * 60
+      }; ${
+        window.location.protocol === "https:"
+          ? "secure; samesite=none"
+          : "samesite=lax"
+      }`;
+    }
   },
 };
