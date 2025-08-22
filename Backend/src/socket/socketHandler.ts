@@ -65,15 +65,21 @@ export const initializeSocket = (server: HTTPServer) => {
     },
   });
 
-  // Authentication middleware for Socket.IO
+  // Enhanced authentication middleware for Socket.IO
   io.use(async (socket: AuthenticatedSocket, next) => {
     try {
+      console.log("🔐 Attempting socket authentication...");
+      console.log("🔍 Socket handshake auth:", socket.handshake.auth);
+      console.log("🔍 Socket handshake headers:", socket.handshake.headers);
+
       // Try to get token from client-side auth first (fallback)
       let token = socket.handshake.auth.token;
 
       // If no token from client, try to get it from HTTP-only cookies
       if (!token) {
         const cookies = socket.handshake.headers.cookie;
+        console.log("🍪 Received cookies:", cookies);
+
         if (cookies) {
           // Parse cookies to extract token
           const cookieArray = cookies.split(";");
@@ -81,6 +87,7 @@ export const initializeSocket = (server: HTTPServer) => {
             const [name, value] = cookie.trim().split("=");
             if (name === "token") {
               token = value;
+              console.log("✅ Found token in cookies");
               break;
             }
           }
@@ -91,10 +98,16 @@ export const initializeSocket = (server: HTTPServer) => {
         console.log(
           "❌ Socket connection rejected: No token found in auth or cookies"
         );
+        console.log("🔍 Available auth methods:", {
+          authToken: !!socket.handshake.auth.token,
+          cookies: !!socket.handshake.headers.cookie,
+          authorization: !!socket.handshake.headers.authorization,
+        });
         return next(new Error("Authentication error: No token provided"));
       }
 
       // Verify JWT token
+      console.log("🔑 Verifying JWT token...");
       const payload = verify(token, config.JSON_WEB_TOKEN_SECRET as string) as {
         sub: string;
         role?: string;
@@ -105,13 +118,17 @@ export const initializeSocket = (server: HTTPServer) => {
       socket.userRole = payload.role || "User";
 
       console.log(
-        `✅ Socket authenticated for user: ${socket.userId} (via ${
-          socket.handshake.auth.token ? "auth" : "cookie"
-        })`
+        `✅ Socket authenticated for user: ${socket.userId} (${
+          socket.userRole
+        }) via ${socket.handshake.auth.token ? "auth" : "cookie"}`
       );
       next();
     } catch (error) {
       console.log("❌ Socket authentication failed:", error);
+      console.log("🔍 Error details:", {
+        message: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       next(new Error("Authentication error: Invalid token"));
     }
   });
