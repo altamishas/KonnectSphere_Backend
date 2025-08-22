@@ -12,9 +12,7 @@ import {
 
 // Configure axios with proper base URL for backend
 const api = axios.create({
-  baseURL: `${
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"
-  }/api`,
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
   withCredentials: true, // Important for HTTP-only cookies
 });
 
