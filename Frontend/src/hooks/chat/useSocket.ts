@@ -48,7 +48,14 @@ export const useSocket = (): UseSocketReturn => {
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
 
-    // Enhanced Socket.IO configuration
+    // Enhanced Socket.IO configuration with debugging
+    console.log("🔧 Socket connection config:", {
+      serverUrl,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      isProduction: process.env.NODE_ENV === "production",
+    });
+
     socketRef.current = io(serverUrl, {
       withCredentials: true, // Enable cross-domain cookie support
       transports: ["websocket", "polling"],
@@ -57,12 +64,14 @@ export const useSocket = (): UseSocketReturn => {
       },
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-      timeout: 30000,
+      reconnectionAttempts: 15,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 60000, // Increased timeout
+      forceNew: true, // Force new connection
       extraHeaders: {
         Authorization: token ? `Bearer ${token}` : "",
+        "X-Client-Type": "web",
       },
     });
 
