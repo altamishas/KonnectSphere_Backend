@@ -44,19 +44,26 @@ export const useSocket = (): UseSocketReturn => {
     // Connect to the backend server (Railway in production, localhost in dev)
     const serverUrl =
       process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+    const token = localStorage.getItem("token"); // Get token from localStorage as fallback
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
 
-    // Socket.IO will now authenticate using HTTP-only cookies on the server side
+    // Enhanced Socket.IO configuration
     socketRef.current = io(serverUrl, {
-      // Don't send token in auth - let server read from HTTP-only cookie
-      withCredentials: true, // This ensures cookies are sent with the request
+      withCredentials: true, // Enable cross-domain cookie support
       transports: ["websocket", "polling"],
+      auth: {
+        token: token, // Send token in auth for fallback
+      },
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 30000,
+      extraHeaders: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
     });
 
     const socket = socketRef.current;
@@ -99,10 +106,22 @@ export const useSocket = (): UseSocketReturn => {
 
     socket.on("connect_error", (error: Error) => {
       console.error("💥 Socket connection error:", error);
-      console.log(
-        "🔍 This might be due to authentication issues. Check if you're logged in."
-      );
-      setIsConnected(false);
+      console.log("🔍 Connection details:", {
+        serverUrl,
+        hasToken: !!token,
+        withCredentials: true,
+        transports: ["websocket", "polling"],
+      });
+
+      // Try to reconnect with localStorage token if cookie auth fails
+      if (!token && localStorage.getItem("token")) {
+        console.log("🔄 Retrying connection with localStorage token...");
+        socket.auth = { token: localStorage.getItem("token") };
+        socket.connect();
+      } else {
+        console.log("⚠️ No fallback authentication available");
+        setIsConnected(false);
+      }
     });
 
     // Handle successful room joining
