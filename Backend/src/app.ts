@@ -54,6 +54,12 @@ app.use(cookieParser());
 // CORS configuration for development and production
 const corsOrigins = [config.FRONTEND_URL as string];
 
+// Debug logging for environment variables
+console.log("🔧 Environment Configuration:");
+console.log("NODE_ENV:", config.NODE_ENV);
+console.log("FRONTEND_URL:", config.FRONTEND_URL);
+console.log("Configured CORS origins:", corsOrigins);
+
 // Add ngrok domains for development
 if (process.env.NODE_ENV === "development") {
   corsOrigins.push("https://*.ngrok.io");
@@ -61,26 +67,73 @@ if (process.env.NODE_ENV === "development") {
   corsOrigins.push("http://127.0.0.1:3000");
 }
 
+// Add additional allowed origins for production (as fallback)
+if (process.env.NODE_ENV === "production") {
+  // Add all possible Vercel patterns for your project
+  corsOrigins.push("https://konnectsphere.vercel.app");
+  corsOrigins.push("https://konect-sphere.vercel.app"); // Alternative spelling
+  corsOrigins.push("https://konect-sphere.vercel.app"); // Alternative spelling
+  corsOrigins.push("https://*.vercel.app"); // All Vercel preview deployments
+  corsOrigins.push("https://*-muhammad-muzzammils-projects-*.vercel.app"); // Your preview deployments
+}
+
 app.use(
   cors({
     origin: function (origin, callback) {
+      console.log("🌐 CORS Request from origin:", origin);
+      console.log("🔍 Available CORS origins:", corsOrigins);
+
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log("✅ Allowing request with no origin");
+        return callback(null, true);
+      }
 
       // Check if origin matches our allowed patterns
-      const isAllowed = corsOrigins.some((allowedOrigin) => {
+      let isAllowed = corsOrigins.some((allowedOrigin) => {
+        if (!allowedOrigin) return false; // Skip undefined/null values
+
         if (allowedOrigin.includes("*")) {
-          // Handle wildcard patterns like *.ngrok.io
-          const pattern = allowedOrigin.replace("*", ".*");
-          return new RegExp(pattern).test(origin);
+          // Handle wildcard patterns like *.vercel.app
+          const pattern = allowedOrigin
+            .replace(/\./g, "\\.") // Escape dots
+            .replace(/\*/g, ".*"); // * matches any characters
+          const regex = new RegExp(`^${pattern}$`);
+          const matches = regex.test(origin);
+          console.log(
+            `🔍 Testing wildcard ${allowedOrigin} -> ${pattern} against ${origin}: ${matches}`
+          );
+          return matches;
         }
-        return allowedOrigin === origin;
+        const matches = allowedOrigin === origin;
+        console.log(
+          `🔍 Testing exact match ${allowedOrigin} against ${origin}: ${matches}`
+        );
+        return matches;
       });
 
+      // Special handling for Vercel deployments (as backup)
+      if (!isAllowed && origin?.includes(".vercel.app")) {
+        // Allow any Vercel deployment that contains your project keywords
+        const projectKeywords = ["konnect", "sphere", "muhammad-muzzammil"];
+        const hasProjectKeyword = projectKeywords.some((keyword) =>
+          origin.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        if (hasProjectKeyword) {
+          console.log(
+            `✅ Allowing Vercel deployment with project keyword: ${origin}`
+          );
+          isAllowed = true;
+        }
+      }
+
       if (isAllowed) {
+        console.log("✅ CORS allowing origin:", origin);
         callback(null, true);
       } else {
         console.log("🚫 CORS blocked origin:", origin);
+        console.log("🚫 Origin not in allowed list:", corsOrigins);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -101,6 +154,19 @@ app.use(
 
 app.get("/", (req, res) => {
   res.json({ message: "Backend Server is responding" });
+});
+
+// Temporary debug endpoint - remove after fixing CORS issue
+app.get("/debug/cors", (req, res) => {
+  res.json({
+    message: "CORS Debug Information",
+    environment: {
+      NODE_ENV: config.NODE_ENV,
+      FRONTEND_URL: config.FRONTEND_URL,
+    },
+    corsOrigins: corsOrigins,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/api/users", userRouter);
