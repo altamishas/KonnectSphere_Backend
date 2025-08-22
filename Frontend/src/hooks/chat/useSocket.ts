@@ -32,18 +32,25 @@ export const useSocket = (): UseSocketReturn => {
 
     // Don't create multiple connections
     if (socketRef.current?.connected) {
-      console.log("Socket already connected");
+      console.log("✅ Socket already connected, skipping initialization");
       return;
     }
 
-    // Disconnect existing socket if any
+    // Clean up existing socket before creating new one
     if (socketRef.current) {
+      console.log("🧹 Cleaning up existing socket connection");
+      socketRef.current.removeAllListeners();
       socketRef.current.disconnect();
+      socketRef.current = null;
     }
 
     // Connect to the backend server (Railway in production, localhost in dev)
-    const serverUrl =
+    // Remove /api suffix for socket connection as socket.io is at root level
+    let serverUrl =
       process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+    if (serverUrl.endsWith("/api")) {
+      serverUrl = serverUrl.slice(0, -4); // Remove /api suffix
+    }
     const token = localStorage.getItem("token"); // Get token from localStorage as fallback
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
