@@ -390,7 +390,7 @@ export const usePitchData = () => {
             // Final submission completed
             handleSuccess("Pitch submitted successfully!");
             setTimeout(() => {
-              router.push("/dashboard/pitches");
+              router.push("/enterpreneur/dashboard?tab=my-pitches");
             }, 1500);
           }
         } else {
