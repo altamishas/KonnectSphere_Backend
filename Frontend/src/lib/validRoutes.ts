@@ -10,12 +10,14 @@ export const staticRoutes = [
   // Investment related routes
   "/investor/dashboard",
   "/explore-pitches",
+  "complete-investor-profile",
   // Fundraising related routes
   "/enterpreneur/dashboard",
   "/add-pitch",
   "/complete-investor-profile",
 
   // Help center routes
+  "/conversations/initiate",
   "/how-it-works",
   "/testimonials",
   "/faqs",
@@ -46,7 +48,6 @@ export const staticRoutes = [
 export const dynamicRoutes = [
   "/view-pitch", // handles /pitch/[id]
   "/investor", // handles /investor/[id] (if needed)
-  "/reset-password",
 ];
 
 // Protected routes that require authentication
@@ -87,9 +88,6 @@ export function isValidRoute(pathname: string): boolean {
     ) {
       return true;
     }
-  }
-  if (pathname.startsWith("/reset-password/")) {
-    return true;
   }
 
   // Consider root-level routes with known base that may have query strings handled elsewhere
