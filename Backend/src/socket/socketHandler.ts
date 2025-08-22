@@ -40,6 +40,7 @@ export const initializeSocket = (server: HTTPServer) => {
   console.log("🔌 Initializing Socket.IO server...");
 
   io = new SocketIOServer(server, {
+    path: "/socket.io/", // Explicitly set the path
     cors: {
       origin: [
         "http://localhost:3000",
@@ -56,6 +57,7 @@ export const initializeSocket = (server: HTTPServer) => {
     transports: ["websocket", "polling"],
     pingTimeout: 60000,
     pingInterval: 25000,
+    allowEIO3: true, // Support older Socket.IO clients
     cookie: {
       name: "io",
       httpOnly: true,
