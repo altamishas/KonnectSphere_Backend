@@ -48,6 +48,12 @@ export const useSocket = (): UseSocketReturn => {
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
 
+    // Validate we have authentication before attempting connection
+    if (!token && !document.cookie.includes("token")) {
+      console.warn("⚠️ No authentication available for socket connection");
+      return;
+    }
+
     // Enhanced Socket.IO configuration with debugging
     console.log("🔧 Socket connection config:", {
       serverUrl,
@@ -64,11 +70,12 @@ export const useSocket = (): UseSocketReturn => {
       },
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 15,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 60000, // Increased timeout
-      forceNew: true, // Force new connection
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 30000, // More reasonable timeout
+      forceNew: false, // Don't force new connection
+      path: "/socket.io/", // Explicitly set the path
       extraHeaders: {
         Authorization: token ? `Bearer ${token}` : "",
         "X-Client-Type": "web",
@@ -115,20 +122,38 @@ export const useSocket = (): UseSocketReturn => {
 
     socket.on("connect_error", (error: Error) => {
       console.error("💥 Socket connection error:", error);
+      console.log("🔍 Error type:", error.message);
       console.log("🔍 Connection details:", {
         serverUrl,
         hasToken: !!token,
+        cookieToken: document.cookie.includes("token"),
         withCredentials: true,
         transports: ["websocket", "polling"],
+        socketPath: socket.io.opts.path,
       });
 
+      // Handle specific error types
+      if (error.message.includes("Invalid namespace")) {
+        console.error(
+          "❌ Socket.IO namespace error - check server configuration"
+        );
+        // Don't retry for namespace errors
+        setIsConnected(false);
+        return;
+      }
+
       // Try to reconnect with localStorage token if cookie auth fails
-      if (!token && localStorage.getItem("token")) {
+      const storedToken = localStorage.getItem("token");
+      if (!token && storedToken) {
         console.log("🔄 Retrying connection with localStorage token...");
-        socket.auth = { token: localStorage.getItem("token") };
+        socket.auth = { token: storedToken };
         socket.connect();
+      } else if (!storedToken && !document.cookie.includes("token")) {
+        console.log("⚠️ No authentication available - redirecting to login");
+        // Redirect to login if no auth available
+        window.location.href = "/login";
       } else {
-        console.log("⚠️ No fallback authentication available");
+        console.log("⚠️ Authentication available but connection failed");
         setIsConnected(false);
       }
     });
