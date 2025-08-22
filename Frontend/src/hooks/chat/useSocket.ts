@@ -41,8 +41,9 @@ export const useSocket = (): UseSocketReturn => {
       socketRef.current.disconnect();
     }
 
-    // Backend is running on port 8080, not 3000
-    const serverUrl = process.env.NEXT_PUBLIC_API_URL;
+    // Connect to the backend server (Railway in production, localhost in dev)
+    const serverUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL;
 
     console.log("🔌 Initializing socket connection to:", serverUrl);
 
